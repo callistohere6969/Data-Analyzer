@@ -27,11 +27,12 @@ Agent          Generator   Detector  Agent
 ## 🏗️ Tech Stack
 
 - **Orchestration**: LangGraph (state machine for agent workflow)
-- **Agents**: LangChain + OpenAI GPT-4/3.5-turbo
+- **Agents**: LangChain + OpenRouter
 - **Data Processing**: Pandas, NumPy, SciPy
-- **Visualization**: Matplotlib, Seaborn, Plotly
+- **Visualization**: Plotly (interactive HTML)
 - **UI**: Streamlit (web interface)
 - **API**: OpenRouter (for LLM access)
+- **Storage**: SQLite (on-the-fly DB for Q&A)
 
 ## 🤖 Five Specialized Agents
 
@@ -55,14 +56,13 @@ Agent          Generator   Detector  Agent
 
 ### 4. **Visualization Agent** 📈
 - Auto-selects appropriate chart types
-- Generates distributions, heatmaps, scatter plots
-- Creates correlation matrices
-- Saves visualizations as PNG files
+- Generates interactive Plotly charts
+- Skips heavy charts for large datasets
 
 ### 5. **Explanation Agent** 📝
 - Synthesizes outputs from all agents
 - Generates natural language executive summary
-- Answers follow-up questions about the analysis
+- Answers follow-up questions (SQL + rules + fallback)
 
 ## 📁 Project Structure
 
@@ -73,6 +73,7 @@ multi-agent-analyzer/
 ├── requirements.txt            # Dependencies
 ├── .env                        # API keys (DON'T COMMIT THIS)
 ├── .env.example               # Example .env file
+├── runtime.txt                # Python version pin for hosting
 ├── README.md                  # This file
 │
 ├── agents/
@@ -91,19 +92,22 @@ multi-agent-analyzer/
 ├── utils/
 │   ├── __init__.py
 │   ├── llm.py                 # OpenRouter LLM setup
-│   └── data_loader.py         # CSV utilities
+│   ├── data_loader.py         # CSV/Excel/JSON utilities
+│   ├── sqlite_helper.py       # SQLite Q&A support
+│   └── pdf_export.py          # PDF report export
 │
 ├── outputs/                   # Generated charts (gitignored)
 │
 └── sample_data/
-    └── sales_sample.csv       # Test data
+   ├── sales_sample.csv       # Test data
+   └── sales_sample.json      # Test data
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- OpenRouter API key (free at https://openrouter.ai)
+- Python 3.11+ (for Streamlit Cloud we pin runtime)
+- OpenRouter API key (https://openrouter.ai)
 
 ### Installation (with existing projectvenv)
 
@@ -144,7 +148,8 @@ multi-agent-analyzer/
    # macOS/Linux:
    cp .env.example .env
    
-   # Then edit .env and add your OpenRouter API key
+   # Then edit .env and add your OpenRouter API key:
+   # OPENROUTER_API_KEY=sk-or-v1-...
    ```
 
 5. **Run the application**
@@ -170,18 +175,40 @@ For quick reference, see [QUICKSTART.md](QUICKSTART.md)
 
 ## 💻 Usage
 
-1. **Upload your CSV** or use the sample data (sales_sample.csv)
+1. **Upload your file** (CSV, Excel, or JSON) or use sample data
 2. **Configure analysis options**:
    - Enable/disable visualizations
    - Set minimum rows for visualizations
 3. **Click "Run Analysis"** to start the workflow
 4. **View results** in tabbed interface:
-   - **Profile**: Data structure and quality metrics
-   - **Insights**: Key patterns and correlations
+   - **Profile**: Data structure + quality score
+   - **Insights**: Patterns + statistical significance
    - **Anomalies**: Outliers and unusual patterns
-   - **Visualizations**: Auto-generated charts
-   - **Report**: Executive summary
-   - **Q&A**: Ask follow-up questions
+   - **Visualizations**: Interactive charts
+   - **Report**: Executive summary + PDF export
+   - **Q&A**: Ask follow-up questions (SQL-backed)
+
+## 📊 Data Quality & Recommendations
+- **Quality score**: 100 − (missing% + duplicate% + outlier%)
+- **Column recommendations**: best for visualization, grouping, cleaning
+- **Target suggestions**: likely target columns with confidence
+
+## 🧪 Statistical Tests
+- Correlation significance (p-values)
+- Chi-square for categorical relationships
+- t-tests for group comparisons
+
+## 📄 PDF Export
+Use the **Export to PDF** button in the Report tab.
+
+## ☁️ Deploy to Streamlit Cloud
+1. Push this repo to GitHub
+2. Create a new Streamlit app and set **app.py** as the entry point
+3. Add **Secrets**:
+   ```toml
+   OPENROUTER_API_KEY = "sk-or-v1-..."
+   ```
+4. Reboot the app
 
 ## 🔄 LangGraph Workflow
 
