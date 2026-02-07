@@ -288,18 +288,28 @@ def main():
                 
                 st.write("---")
             
-            # Create tabs for different analyses
-            tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            # Tab selector (keeps selection across reruns)
+            tab_labels = [
                 "📋 Profile",
                 "💡 Insights",
                 "🚨 Anomalies",
                 "📈 Visualizations",
                 "📝 Report",
                 "❓ Q&A"
-            ])
+            ]
+            if "force_tab" in st.session_state:
+                st.session_state["active_tab_selector"] = st.session_state.pop("force_tab")
+
+            selected_tab = st.radio(
+                "Select section",
+                tab_labels,
+                horizontal=True,
+                key="active_tab_selector",
+                label_visibility="collapsed"
+            )
             
             # Tab 1: Data Profile
-            with tab1:
+            if selected_tab == "📋 Profile":
                 profile = state.get("profile_result", {})
                 
                 # Display Data Quality Score prominently
@@ -348,7 +358,7 @@ def main():
                 st.write(get_profile_summary(state))
             
             # Tab 2: Insights
-            with tab2:
+            elif selected_tab == "💡 Insights":
                 insights = state.get("insights_result", [])
                 if insights:
                     # Add beginner-friendly guide
@@ -440,7 +450,7 @@ def main():
                     st.info("No insights generated")
             
             # Tab 3: Anomalies
-            with tab3:
+            elif selected_tab == "🚨 Anomalies":
                 anomalies = state.get("anomalies_result", [])
                 if anomalies:
                     # Add beginner-friendly guide
@@ -516,7 +526,7 @@ def main():
                     st.success("✓ No anomalies detected!")
             
             # Tab 4: Visualizations
-            with tab4:
+            elif selected_tab == "📈 Visualizations":
                 visualizations = state.get("visualizations", [])
                 if visualizations:
                     st.write(get_visualizations_summary(state))
@@ -541,7 +551,7 @@ def main():
                     st.info("No visualizations generated")
             
             # Tab 5: Executive Report
-            with tab5:
+            elif selected_tab == "📝 Report":
                 summary = state.get("final_summary")
                 if summary:
                     st.write(summary)
@@ -574,7 +584,7 @@ def main():
                     st.info("No report available")
             
             # Tab 6: Q&A
-            with tab6:
+            elif selected_tab == "❓ Q&A":
                 st.write("Ask follow-up questions about your analysis")
                 
                 # Use form to enable Enter key submission
@@ -583,16 +593,22 @@ def main():
                     submit_button = st.form_submit_button("Ask")
                 
                 if submit_button:
+                    st.session_state["force_tab"] = "❓ Q&A"
                     if user_question:
                         with st.spinner("🤔 Thinking..."):
                             try:
                                 answer = answer_followup_question(state, user_question)
-                                st.write("**Answer:**")
-                                st.write(answer)
+                                st.session_state["last_qa_question"] = user_question
+                                st.session_state["last_qa_answer"] = answer
                             except Exception as e:
-                                st.error(f"Error answering question: {str(e)}")
+                                st.session_state["last_qa_answer"] = f"Error answering question: {str(e)}"
                     else:
-                        st.warning("Please enter a question")
+                        st.session_state["last_qa_answer"] = "Please enter a question"
+                    st.rerun()
+
+                if st.session_state.get("last_qa_answer"):
+                    st.write("**Answer:**")
+                    st.write(st.session_state["last_qa_answer"])
     
     # Footer
     st.write("---")
